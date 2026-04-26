@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  oracle:
+    build:
+      context: .
+      target: builder          # Use builder stage in dev for ts-node-dev
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      HELIUS_API_KEY: ${HELIUS_API_KEY:-}
+      HELIUS_RPC_URL: ${HELIUS_RPC_URL:-}
+      RECEIVER_WALLET_ADDRESS: ${RECEIVER_WALLET_ADDRESS}
+      PAYMENT_AMOUNT_USDC: ${PAYMENT_AMOUNT_USDC:-1000000}
+      PAYMENT_AMOUNT_SOL: ${PAYMENT_AMOUNT_SOL:-1000000}
+      PAYMENT_WINDOW_MS: ${PAYMENT_WINDOW_MS:-300000}
+      USDC_MINT_ADDRESS: ${USDC_MINT_ADDRESS:-EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v}
+      TRUST_SCORE_HIGH: ${TRUST_SCORE_HIGH:-80}
+      TRUST_SCORE_MEDIUM: ${TRUST_SCORE_MEDIUM:-50}
+      RISK_THRESHOLD_LOW: ${RISK_THRESHOLD_LOW:-20}
+    volumes:
+      - ./src:/app/src:ro    # Hot reload in dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
