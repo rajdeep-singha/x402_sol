@@ -18,7 +18,7 @@ export const env = {
   // Solana RPC
   SOLANA_RPC_URL: optional(
     "SOLANA_RPC_URL",
-    "https://api.mainnet-beta.solana.com"
+    "https://api.devnet.solana.com" 
   ),
   HELIUS_API_KEY: optional("HELIUS_API_KEY", ""),
   HELIUS_RPC_URL: optional("HELIUS_RPC_URL", ""),
@@ -37,4 +37,5 @@ export const env = {
   TRUST_SCORE_HIGH: parseInt(optional("TRUST_SCORE_HIGH", "80"), 10),
   TRUST_SCORE_MEDIUM: parseInt(optional("TRUST_SCORE_MEDIUM", "50"), 10),
   RISK_THRESHOLD_LOW: parseInt(optional("RISK_THRESHOLD_LOW", "20"), 10),
+  NETWORK: "devnet" as const,
 } as const;

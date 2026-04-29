@@ -13,6 +13,7 @@ import { parseSolanaTransactions } from "../utils/parser";
 import { logger } from "../utils/logger";
 import { CONSTANTS } from "../config/constants";
 import { WalletMetadata, ParsedTransaction, TokenAccount } from "../types";
+import { goldrushClient } from "../libs/goldrush";
 
 class BlockchainService {
  // Fetch wallet metadata: balance, token accounts, first-tx date.
@@ -70,23 +71,6 @@ class BlockchainService {
     return this._fetchViaRpc(walletAddress, limit);
   }
 
-  // Private Helpers 
-
-  private async _fetchViaHelius(
-    walletAddress: string,
-    limit: number
-  ): Promise<ParsedTransaction[]> {
-    logger.debug(`Using Helius for tx fetch: ${walletAddress.slice(0, 8)}…`);
-    const enriched = await fetchHeliusTransactions(walletAddress, limit);
-
-    if (!enriched) {
-      logger.warn("Helius returned null, falling back to RPC");
-      return this._fetchViaRpc(walletAddress, limit);
-    }
-
-    return this._mapHeliusToParsed(enriched);
-  }
-
   private async _fetchViaRpc(
     walletAddress: string,
     limit: number
@@ -115,6 +99,25 @@ class BlockchainService {
 
     return parseSolanaTransactions(allRaw, signatures);
   }
+
+  // Private Helpers 
+
+  private async _fetchViaHelius(
+    walletAddress: string,
+    limit: number
+  ): Promise<ParsedTransaction[]> {
+    logger.debug(`Using Helius for tx fetch: ${walletAddress.slice(0, 8)}…`);
+    const enriched = await fetchHeliusTransactions(walletAddress, limit);
+
+    if (!enriched) {
+      logger.warn("Helius returned null, falling back to RPC");
+      return this._fetchViaRpc(walletAddress, limit);
+    }
+
+    return this._mapHeliusToParsed(enriched);
+  } 
+
+
 
   private _mapHeliusToParsed(
     enriched: HeliusEnrichedTransaction[]

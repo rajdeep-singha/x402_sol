@@ -9,7 +9,7 @@ export const CONSTANTS = {
     WINDOW_MS: env.PAYMENT_WINDOW_MS,
     USDC_MINT: env.USDC_MINT_ADDRESS,
     ACCEPTED_TOKENS: ["USDC", "SOL"] as const,
-    NETWORK: "mainnet-beta" as const,
+    NETWORK: "devnet" as const,
   },
 
   //  Trust Scoring 
