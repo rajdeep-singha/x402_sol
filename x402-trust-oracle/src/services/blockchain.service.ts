@@ -15,9 +15,8 @@ import { CONSTANTS } from "../config/constants";
 import { WalletMetadata, ParsedTransaction, TokenAccount } from "../types";
 
 class BlockchainService {
-  /**
-   * Fetch wallet metadata: balance, token accounts, first-tx date.
-   */
+ // Fetch wallet metadata: balance, token accounts, first-tx date.
+   
   async getWalletMetadata(walletAddress: string): Promise<WalletMetadata> {
     const connection = getSolanaConnection();
     const pubkey = new PublicKey(walletAddress);
@@ -71,7 +70,7 @@ class BlockchainService {
     return this._fetchViaRpc(walletAddress, limit);
   }
 
-  // ─── Private Helpers ──────────────────────────────────────────────────────
+  // Private Helpers 
 
   private async _fetchViaHelius(
     walletAddress: string,
@@ -139,10 +138,7 @@ class BlockchainService {
     });
   }
 
-  /**
-   * Verify a specific transaction on-chain.
-   * Returns the raw parsed transaction, or null if not found / failed.
-   */
+
   async getTransaction(
     signature: string
   ): Promise<ParsedTransactionWithMeta | null> {

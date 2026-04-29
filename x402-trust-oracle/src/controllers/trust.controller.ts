@@ -6,7 +6,7 @@ import { AppError } from "../middleware/error.middleware";
 import { logger } from "../utils/logger";
 import { TrustQueryResponse } from "../types";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  Helpers 
 
 function assertValidWallet(address: string): void {
   try {
@@ -16,7 +16,7 @@ function assertValidWallet(address: string): void {
   }
 }
 
-// ─── Controller ───────────────────────────────────────────────────────────────
+//  Controller 
 
 /**
  * GET /trust/:walletAddress

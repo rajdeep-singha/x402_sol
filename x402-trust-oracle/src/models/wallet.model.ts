@@ -2,19 +2,16 @@ import { CachedWalletScore, TrustScore } from "../types";
 import { CONSTANTS } from "../config/constants";
 import { logger } from "../utils/logger";
 
-/**
- * In-memory LRU-style cache for computed trust scores.
- *
- * Avoids re-fetching on-chain data for recently scored wallets.
- * For production scale → replace with Redis.
- */
+
+ // In-memory LRU-style cache for computed trust scores. Avoids re-fetching on-chain data for recently scored wallets. For production scale → replace with Redis.
+ 
 class WalletScoreCache {
   private cache: Map<string, CachedWalletScore> = new Map();
   private readonly TTL_MS = CONSTANTS.TRUST.CACHE_TTL_MS;
 
-  /**
-   * Retrieve a cached score for a wallet address, or null if expired/absent.
-   */
+  
+    //Retrieve a cached score for a wallet address, or null if expired/absent.
+   
   get(walletAddress: string): TrustScore | null {
     const record = this.cache.get(walletAddress);
     if (!record) return null;
@@ -30,9 +27,9 @@ class WalletScoreCache {
     return record.trustScore;
   }
 
-  /**
-   * Store a trust score for a wallet address.
-   */
+  
+    //Store a trust score for a wallet address.
+   
   set(walletAddress: string, trustScore: TrustScore): void {
     this.cache.set(walletAddress, {
       walletAddress,
@@ -53,9 +50,8 @@ class WalletScoreCache {
     this.cache.delete(walletAddress);
   }
 
-  /**
-   * Purge all expired cache entries.
-   */
+  //  Purge all expired cache entries.
+
   purgeExpired(): number {
     const now = Date.now();
     let count = 0;

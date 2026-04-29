@@ -1,4 +1,4 @@
-// ─── Trust Score Types ────────────────────────────────────────────────────────
+// Trust Score Types 
 
 export type TrustRating = "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN";
 
@@ -17,7 +17,6 @@ export interface TrustBreakdown {
   recentBehavior: number;       // sub-score 0–100
 }
 
-// ─── Blockchain / On-chain Types ──────────────────────────────────────────────
 
 export interface ParsedTransaction {
   signature: string;
@@ -48,7 +47,7 @@ export interface TokenAccount {
   symbol?: string;
 }
 
-// ─── Payment / x402 Types ─────────────────────────────────────────────────────
+// Payment / x402 Types 
 
 export type PaymentToken = "USDC" | "SOL";
 
@@ -71,7 +70,7 @@ export interface UsedTransaction {
   walletAddress?: string;
 }
 
-// ─── API Request / Response Types ────────────────────────────────────────────
+// ─── API Request / Response Types 
 
 export interface TrustQueryRequest {
   walletAddress: string;
@@ -103,7 +102,7 @@ export interface ApiError {
   statusCode: number;
 }
 
-// ─── Cache Types ──────────────────────────────────────────────────────────────
+//  Cache Types 
 
 export interface CachedWalletScore {
   walletAddress: string;

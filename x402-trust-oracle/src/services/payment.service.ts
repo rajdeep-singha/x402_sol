@@ -6,42 +6,28 @@ import { logger } from "../utils/logger";
 import { PaymentValidationResult, PaymentToken } from "../types";
 
 class PaymentService {
-  /**
-   * Validate an x402 payment transaction.
-   *
-   * Checks:
-   *  1. Signature exists on-chain
-   *  2. Transaction succeeded (no error)
-   *  3. Sent to the correct receiver address
-   *  4. Amount meets the minimum requirement
-   *  5. Transaction is within the allowed time window
-   *  6. Signature hasn't been used before (anti-replay)
-   */
+ 
   async validatePayment(
     txSignature: string,
     token: PaymentToken
   ): Promise<PaymentValidationResult> {
     logger.debug(`Validating payment: ${txSignature.slice(0, 16)}… [${token}]`);
 
-    // ── 1. Anti-replay guard ───────────────────────────────────────────────
     if (transactionStore.isUsed(txSignature)) {
       return this._fail("Transaction signature already used (replay attack)");
     }
 
-    // ── 2. Fetch transaction on-chain ──────────────────────────────────────
     const tx = await blockchainService.getTransaction(txSignature);
     if (!tx) {
       return this._fail("Transaction not found on-chain");
     }
 
-    // ── 3. Transaction must have succeeded ────────────────────────────────
     if (tx.meta?.err) {
       return this._fail(
         `Transaction failed on-chain: ${JSON.stringify(tx.meta.err)}`
       );
     }
 
-    // ── 4. Time window check ──────────────────────────────────────────────
     if (tx.blockTime) {
       const txAgeMs = Date.now() - tx.blockTime * 1000;
       if (txAgeMs > CONSTANTS.PAYMENT.WINDOW_MS) {
@@ -51,7 +37,6 @@ class PaymentService {
       }
     }
 
-    // ── 5. Validate amount & receiver ─────────────────────────────────────
     const validation =
       token === "SOL"
         ? this._validateSolTransfer(tx)
@@ -59,7 +44,6 @@ class PaymentService {
 
     if (!validation.valid) return validation;
 
-    // ── 6. Mark as used ───────────────────────────────────────────────────
     transactionStore.markUsed(txSignature);
 
     logger.info(
@@ -74,7 +58,6 @@ class PaymentService {
     };
   }
 
-  // ─── Private Validators ───────────────────────────────────────────────────
 
   private _validateSolTransfer(
     tx: NonNullable<Awaited<ReturnType<typeof blockchainService.getTransaction>>>

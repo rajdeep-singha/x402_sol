@@ -11,32 +11,24 @@ import {
 } from "../types";
 
 class TrustService {
-  /**
-   * Entry point: fetch wallet data and compute a trust score.
-   * Returns cached result if fresh.
-   */
+ 
   async getTrustScore(walletAddress: string): Promise<TrustScore> {
-    // ── Cache check ────────────────────────────────────────────────────────
     const cached = walletCache.get(walletAddress);
     if (cached) return cached;
 
     logger.info(`Scoring wallet: ${walletAddress.slice(0, 8)}…`);
 
-    // ── Fetch on-chain data in parallel ──────────────────────────────────
     const [metadata, transactions] = await Promise.all([
       blockchainService.getWalletMetadata(walletAddress),
       blockchainService.getWalletTransactions(walletAddress),
     ]);
 
-    // ── Compute score ─────────────────────────────────────────────────────
     const score = this._computeScore(metadata, transactions);
 
-    // ── Cache & return ────────────────────────────────────────────────────
     walletCache.set(walletAddress, score);
     return score;
   }
 
-  // ─── Scoring Logic ────────────────────────────────────────────────────────
 
   private _computeScore(
     metadata: WalletMetadata,
@@ -79,10 +71,7 @@ class TrustService {
     };
   }
 
-  /**
-   * Score based on transaction count and success rate.
-   * More txs + high success rate = higher score.
-   */
+  
   private _scoreTransactionHistory(txs: ParsedTransaction[]): number {
     if (txs.length === 0) return 0;
 
@@ -95,9 +84,7 @@ class TrustService {
     return Math.round(countScore * successRate);
   }
 
-  /**
-   * Score based on token diversity and USDC/SOL balance.
-   */
+
   private _scoreTokenActivity(
     metadata: WalletMetadata,
     txs: ParsedTransaction[]
@@ -105,19 +92,14 @@ class TrustService {
     const tokenTxs = txs.filter((t) => t.tokenMint);
     const uniqueTokens = new Set(tokenTxs.map((t) => t.tokenMint)).size;
 
-    // More diverse token usage = higher trust
     const diversityScore = Math.min(100, uniqueTokens * 15);
 
-    // Bonus for holding SOL balance
     const balanceBonus = metadata.solBalance > 0.1 ? 20 : 0;
 
     return Math.min(100, Math.round(diversityScore + balanceBonus));
   }
 
-  /**
-   * Score based on wallet age.
-   * Older wallets are more trusted.
-   */
+  
   private _scoreWalletAge(firstTransactionAt?: number): number {
     if (!firstTransactionAt) return 10; // Unknown age = minimal trust
 
@@ -132,9 +114,7 @@ class TrustService {
     return 10;
   }
 
-  /**
-   * Score recent behavior: penalize recent failed txs or suspicious patterns.
-   */
+  
   private _scoreRecentBehavior(txs: ParsedTransaction[]): number {
     if (txs.length === 0) return 50; // Neutral for no data
 

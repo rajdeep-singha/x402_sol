@@ -12,7 +12,6 @@ import { logger } from "./utils/logger";
 export function createApp(): Application {
   const app = express();
 
-  // ─── Global Middleware ─────────────────────────────────────────────────────
   app.use(
     cors({
       origin: env.NODE_ENV === "production" ? false : "*",
@@ -29,7 +28,6 @@ export function createApp(): Application {
   app.use(express.json({ limit: "10kb" }));
   app.use(express.urlencoded({ extended: false }));
 
-  // ─── Request Logging ───────────────────────────────────────────────────────
   app.use((req, _res, next) => {
     logger.debug(`→ ${req.method} ${req.path}`);
     next();

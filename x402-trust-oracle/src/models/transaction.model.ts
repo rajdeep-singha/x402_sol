@@ -2,20 +2,13 @@ import { UsedTransaction } from "../types";
 import { CONSTANTS } from "../config/constants";
 import { logger } from "../utils/logger";
 
-/**
- * In-memory store for used payment transaction signatures.
- *
- * Prevents replay attacks: once a txSignature is used to unlock the API,
- * it cannot be reused within the configured window.
- *
- * For production scale → replace with Redis or a DB.
- */
+
+  // In-memory store for used payment transaction signatures. Prevents replay attacks: once a txSignature is used to unlock the API, it cannot be reused within the configured window.For production scale → replace with Redis or a DB.
+
 class TransactionStore {
   private store: Map<string, UsedTransaction> = new Map();
 
-  /**
-   * Check if a transaction signature has already been used.
-   */
+//Check if a transaction signature has already been used.
   isUsed(signature: string): boolean {
     const record = this.store.get(signature);
     if (!record) return false;
@@ -32,9 +25,7 @@ class TransactionStore {
     return true;
   }
 
-  /**
-   * Mark a transaction signature as used.
-   */
+ //Mark a transaction signature as used.
   markUsed(signature: string, walletAddress?: string): void {
     this.store.set(signature, {
       signature,
@@ -45,9 +36,7 @@ class TransactionStore {
     logger.debug(`TX marked used: ${signature.slice(0, 16)}…`);
   }
 
-  /**
-   * Purge all expired entries — call on a periodic interval in production.
-   */
+ //Purge all expired entries — call on a periodic interval in production.
   purgeExpired(): number {
     const threshold = Date.now() - CONSTANTS.TIME.TX_REUSE_WINDOW_MS;
     let count = 0;

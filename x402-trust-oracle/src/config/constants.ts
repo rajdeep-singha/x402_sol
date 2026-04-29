@@ -1,7 +1,7 @@
 import { env } from "./env";
 
 export const CONSTANTS = {
-  // ─── Payment ────────────────────────────────────────────────────────────────
+  //  Payment 
   PAYMENT: {
     AMOUNT_USDC: env.PAYMENT_AMOUNT_USDC,
     AMOUNT_SOL: env.PAYMENT_AMOUNT_SOL,
@@ -12,7 +12,7 @@ export const CONSTANTS = {
     NETWORK: "mainnet-beta" as const,
   },
 
-  // ─── Trust Scoring ─────────────────────────────────────────────────────────
+  //  Trust Scoring 
   TRUST: {
     HIGH_THRESHOLD: env.TRUST_SCORE_HIGH,
     MEDIUM_THRESHOLD: env.TRUST_SCORE_MEDIUM,
@@ -21,14 +21,14 @@ export const CONSTANTS = {
     TX_HISTORY_LIMIT: 50,               // max transactions to fetch per wallet
   },
 
-  // ─── Time Limits ───────────────────────────────────────────────────────────
+  //  Time Limits 
   TIME: {
     REQUEST_TIMEOUT_MS: 15_000,         // external RPC call timeout
     SCORE_CACHE_TTL_MS: 10 * 60 * 1000,
     TX_REUSE_WINDOW_MS: env.PAYMENT_WINDOW_MS,
   },
 
-  // ─── HTTP ──────────────────────────────────────────────────────────────────
+  //  HTTP 
   HTTP: {
     PAYMENT_REQUIRED: 402,
     OK: 200,
@@ -38,7 +38,7 @@ export const CONSTANTS = {
     INTERNAL_ERROR: 500,
   },
 
-  // ─── Headers ───────────────────────────────────────────────────────────────
+  //  Headers 
   HEADERS: {
     PAYMENT_TX: "x-payment-tx",         // txSignature sent by client
     PAYMENT_TOKEN: "x-payment-token",   // "USDC" | "SOL"

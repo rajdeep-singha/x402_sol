@@ -8,8 +8,6 @@ import {
 
 const router = Router();
 
-// ─── Payment-gated ────────────────────────────────────────────────────────────
-
 /**
  * GET /trust/:walletAddress
  * Single wallet trust score — protected by x402.
@@ -23,7 +21,6 @@ router.get("/:walletAddress", paymentMiddleware, getTrustScore);
  */
 router.post("/batch", paymentMiddleware, getBatchTrustScores);
 
-// ─── Admin ────────────────────────────────────────────────────────────────────
 
 /**
  * DELETE /trust/cache/:walletAddress
