@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Barlow:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+/* ── Base resets ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background-color: #8BCE53;
+  color: #0D1F0D;
+  font-family: 'Barlow', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Component layer shortcuts ────────────────────────────────────────────── */
+@layer components {
+
+  /* Pill nav button */
+  .nav-pill {
+    @apply font-display text-sm font-black uppercase tracking-wider
+           px-5 py-2 rounded-pill border-2 border-ink
+           shadow-pill transition-all duration-150 cursor-pointer select-none
+           hover:translate-y-[1px] hover:shadow-none active:translate-y-[2px] active:shadow-none;
+  }
+
+  /* Card surface */
+  .card {
+    @apply bg-white rounded-card border-2 border-ink shadow-card;
+  }
+  .card-dark {
+    @apply bg-forest rounded-card border-2 border-ink shadow-card;
+  }
+  .card-lg {
+    @apply bg-white rounded-card-lg border-2 border-ink shadow-card-lg;
+  }
+
+  /* Primary action button */
+  .btn-primary {
+    @apply font-display font-black uppercase tracking-wider
+           rounded-pill border-2 border-ink shadow-btn
+           transition-all duration-150 cursor-pointer select-none
+           hover:translate-y-[2px] hover:shadow-btn-sm
+           active:translate-y-[4px] active:shadow-none
+           disabled:opacity-50 disabled:cursor-not-allowed
+           disabled:translate-y-0 disabled:shadow-btn;
+  }
+
+  /* Status badge */
+  .status-dot-live {
+    @apply inline-block w-2 h-2 rounded-full bg-score-high animate-blink;
+  }
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: #6BAF35; }
+::-webkit-scrollbar-thumb  { background: #0D1F0D; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #FCD34D; }
+
+/* ── Wallet adapter modal — Taurus style ─────────────────────────────────── */
+.wallet-adapter-modal-wrapper {
+  background: #FFFEF0 !important;
+  border: 2px solid #0D1F0D !important;
+  border-radius: 20px !important;
+  box-shadow: 0 6px 0 0 #0D1F0D !important;
+}
+.wallet-adapter-modal-title {
+  font-family: 'Archivo Black', sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  color: #0D1F0D !important;
+}
+.wallet-adapter-button {
+  font-family: 'Archivo Black', sans-serif !important;
+  text-transform: uppercase !important;
+  border-radius: 9999px !important;
+  border: 2px solid #0D1F0D !important;
+  box-shadow: 0 3px 0 0 #0D1F0D !important;
+  background: #FFFEF0 !important;
+  color: #0D1F0D !important;
+  transition: all 0.15s !important;
+}
+.wallet-adapter-button:hover:not(:disabled) {
+  background: #FCD34D !important;
+  transform: translateY(2px) !important;
+  box-shadow: 0 1px 0 0 #0D1F0D !important;
+}
+.wallet-adapter-modal-overlay {
+  background: rgba(13,31,13,0.6) !important;
+}
