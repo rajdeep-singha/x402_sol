@@ -9,11 +9,66 @@ import {
   isHeliusEnabled,
   HeliusEnrichedTransaction,
 } from "../libs/helius";
-import { parseSolanaTransactions } from "../utils/parser";
 import { logger } from "../utils/logger";
 import { CONSTANTS } from "../config/constants";
 import { WalletMetadata, ParsedTransaction, TokenAccount } from "../types";
 import { goldrushClient } from "../libs/goldrush";
+
+// Simple request queue to prevent rate limiting
+class RequestQueue {
+  private queue: Array<() => Promise<any>> = [];
+  private running = false;
+  private delayMs = 500; // 500ms between RPC calls
+
+  async add<T>(fn: () => Promise<T>, retries = 4): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.queue.push(async () => {
+        let attempt = 0;
+        while (attempt <= retries) {
+          try {
+            const result = await fn();
+            resolve(result);
+            return;
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            const is429 = msg.includes("429") || msg.includes("Too Many Requests");
+            if (is429 && attempt < retries) {
+              const backoff = Math.min(1000 * 2 ** attempt, 16000);
+              logger.debug(`Rate limited, retrying in ${backoff}ms (attempt ${attempt + 1}/${retries})`);
+              await this.delay(backoff);
+              attempt++;
+            } else {
+              reject(err);
+              return;
+            }
+          }
+        }
+      });
+      this.process();
+    });
+  }
+
+  private async process() {
+    if (this.running || this.queue.length === 0) return;
+    this.running = true;
+
+    while (this.queue.length > 0) {
+      const fn = this.queue.shift();
+      if (fn) {
+        await fn();
+        await this.delay(this.delayMs);
+      }
+    }
+
+    this.running = false;
+  }
+
+  private delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+}
+
+const requestQueue = new RequestQueue();
 
 class BlockchainService {
  // Fetch wallet metadata: balance, token accounts, first-tx date.
@@ -24,13 +79,20 @@ class BlockchainService {
 
     logger.debug(`Fetching wallet metadata: ${walletAddress.slice(0, 8)}…`);
 
-    const [lamportBalance, tokenAccountsRaw, signatures] = await Promise.all([
-      connection.getBalance(pubkey),
+    // Queue requests sequentially to avoid rate limits
+    const lamportBalance = await requestQueue.add(() => 
+      connection.getBalance(pubkey)
+    );
+
+    const tokenAccountsRaw = await requestQueue.add(() =>
       connection.getParsedTokenAccountsByOwner(pubkey, {
         programId: new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
-      }),
-      connection.getSignaturesForAddress(pubkey, { limit: 1000 }),
-    ]);
+      })
+    );
+
+    const signatures = await requestQueue.add(() =>
+      connection.getSignaturesForAddress(pubkey, { limit: 1000 })
+    );
 
     const tokenAccounts: TokenAccount[] = tokenAccountsRaw.value.map((ta) => {
       const info = ta.account.data.parsed.info;
@@ -78,26 +140,32 @@ class BlockchainService {
     const connection = getSolanaConnection();
     const pubkey = new PublicKey(walletAddress);
 
-    logger.debug(`Fetching ${limit} txs via RPC: ${walletAddress.slice(0, 8)}…`);
+    logger.debug(`Fetching ${limit} tx signatures via RPC: ${walletAddress.slice(0, 8)}…`);
 
-    const sigs = await connection.getSignaturesForAddress(pubkey, { limit });
+    // Use getSignaturesForAddress only — it works on public RPC without rate limiting.
+    // getParsedTransactions is heavily throttled on public devnet/mainnet RPC nodes.
+    const sigs = await requestQueue.add(() =>
+      connection.getSignaturesForAddress(pubkey, { limit })
+    );
+
     if (!sigs.length) return [];
 
-    const signatures = sigs.map((s) => s.signature);
+    logger.debug(`Got ${sigs.length} signatures for ${walletAddress.slice(0, 8)}…`);
 
-    // Fetch in batches of 10 to avoid RPC limits
-    const batchSize = 10;
-    const allRaw: (ParsedTransactionWithMeta | null)[] = [];
-
-    for (let i = 0; i < signatures.length; i += batchSize) {
-      const batch = signatures.slice(i, i + batchSize);
-      const results = await connection.getParsedTransactions(batch, {
-        maxSupportedTransactionVersion: 0,
-      });
-      allRaw.push(...results);
-    }
-
-    return parseSolanaTransactions(allRaw, signatures);
+    // Map signature info directly to ParsedTransaction.
+    // ConfirmedSignatureInfo includes: signature, slot, blockTime, err (null = success).
+    return sigs.map((sig) => ({
+      signature: sig.signature,
+      blockTime: sig.blockTime ?? 0,
+      slot: sig.slot,
+      fee: 0,
+      status: sig.err === null ? ("success" as const) : ("failed" as const),
+      type: "other" as const,
+      fromAddress: undefined,
+      toAddress: undefined,
+      amount: undefined,
+      tokenMint: undefined,
+    }));
   }
 
   // Private Helpers 

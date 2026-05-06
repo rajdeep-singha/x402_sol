@@ -59,11 +59,14 @@ export function useBatchQuery() {
           (state) => setFlowState(state)
         );
 
+        // Backend returns [{ walletAddress, success, data: TrustScore } | { walletAddress, success: false, error }]
+        type BatchItem = { walletAddress: string; success: boolean; data?: TrustScore; error?: string };
         setItems(
-          scores.map((score) => ({
-            walletAddress: score.walletAddress,
-            status: "success",
-            result: score,
+          (scores as unknown as BatchItem[]).map((item) => ({
+            walletAddress: item.walletAddress,
+            status: item.success ? ("success" as const) : ("error" as const),
+            result: item.data,
+            error: item.error,
           }))
         );
       } catch (err) {

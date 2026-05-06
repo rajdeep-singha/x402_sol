@@ -25,8 +25,14 @@ export function getHeliusClient(): AxiosInstance | null {
   return _heliusClient;
 }
 
+// Helius enriched REST API only works on mainnet.
+// If only an RPC URL is set (devnet), skip the REST path.
 export function isHeliusEnabled(): boolean {
-  return !!env.HELIUS_API_KEY;
+  if (!env.HELIUS_API_KEY) return false;
+  // If pointing at devnet RPC, the enriched API won't work — skip it.
+  if (env.HELIUS_RPC_URL?.includes("devnet")) return false;
+  if (env.SOLANA_RPC_URL?.includes("devnet")) return false;
+  return true;
 }
 
 // ─── Helius API helpers ───────────────────────────────────────────────────────

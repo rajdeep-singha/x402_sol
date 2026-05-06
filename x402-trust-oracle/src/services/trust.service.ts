@@ -18,15 +18,64 @@ class TrustService {
 
     logger.info(`Scoring wallet: ${walletAddress.slice(0, 8)}…`);
 
-    const [metadata, transactions] = await Promise.all([
-      blockchainService.getWalletMetadata(walletAddress),
-      blockchainService.getWalletTransactions(walletAddress),
-    ]);
+    try {
+      const [metadata, transactions] = await Promise.allSettled([
+        blockchainService.getWalletMetadata(walletAddress),
+        blockchainService.getWalletTransactions(walletAddress),
+      ]);
 
-    const score = this._computeScore(metadata, transactions);
+      // Handle partial failures gracefully
+      const metadataResult =
+        metadata.status === "fulfilled"
+          ? metadata.value
+          : this._defaultMetadata(walletAddress);
 
-    walletCache.set(walletAddress, score);
-    return score;
+      const transactionsResult =
+        transactions.status === "fulfilled" ? transactions.value : [];
+
+      if (metadata.status === "rejected") {
+        logger.warn(
+          `Failed to fetch metadata: ${(metadata.reason as Error).message}`
+        );
+      }
+
+      if (transactions.status === "rejected") {
+        logger.warn(
+          `Failed to fetch transactions: ${(transactions.reason as Error).message}`
+        );
+      }
+
+      const score = this._computeScore(metadataResult, transactionsResult);
+      walletCache.set(walletAddress, score);
+      return score;
+    } catch (err) {
+      logger.error(`Error computing trust score: ${err}`);
+      // Return minimal score instead of crashing
+      const fallbackScore: TrustScore = {
+        walletAddress,
+        score: 0,
+        rating: "UNKNOWN",
+        breakdown: {
+          transactionHistory: 0,
+          tokenActivity: 0,
+          walletAge: 0,
+          recentBehavior: 50,
+        },
+        fetchedAt: Date.now(),
+      };
+      return fallbackScore;
+    }
+  }
+
+  private _defaultMetadata(address: string): WalletMetadata {
+    return {
+      address,
+      lamportBalance: 0,
+      solBalance: 0,
+      tokenAccounts: [],
+      firstTransactionAt: undefined,
+      totalTransactions: 0,
+    };
   }
 
 
