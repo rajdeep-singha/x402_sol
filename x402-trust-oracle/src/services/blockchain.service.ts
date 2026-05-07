@@ -12,7 +12,47 @@ import {
 import { logger } from "../utils/logger";
 import { CONSTANTS } from "../config/constants";
 import { WalletMetadata, ParsedTransaction, TokenAccount } from "../types";
-import { goldrushClient } from "../libs/goldrush";
+import {
+  getGoldRushTokenBalances,
+  getGoldRushTransactions,
+} from "../libs/goldrush";
+
+const GOLDRUSH_SOLANA_CHAIN = "solana-mainnet";
+
+interface GoldRushBalanceItem {
+  contract_address?: string;
+  contract_decimals?: number;
+  contract_ticker_symbol?: string;
+  balance?: string | number;
+  quote?: number | null;
+}
+
+interface GoldRushBalancesResponse {
+  data?: {
+    address?: string;
+    items?: GoldRushBalanceItem[];
+  };
+}
+
+interface GoldRushTransactionItem {
+  tx_hash?: string;
+  block_signed_at?: string;
+  block_height?: number;
+  fees_paid?: string | number | null;
+  successful?: boolean;
+  log_events?: Array<{
+    decoded?: {
+      name?: string;
+      params?: Array<{ name?: string; value?: unknown }>;
+    } | null;
+  }>;
+}
+
+interface GoldRushTransactionsResponse {
+  data?: {
+    items?: GoldRushTransactionItem[];
+  };
+}
 
 // Simple request queue to prevent rate limiting
 class RequestQueue {
@@ -74,6 +114,14 @@ class BlockchainService {
  // Fetch wallet metadata: balance, token accounts, first-tx date.
    
   async getWalletMetadata(walletAddress: string): Promise<WalletMetadata> {
+    try {
+      return await this._fetchMetadataViaGoldRush(walletAddress);
+    } catch (err) {
+      logger.warn(
+        `GoldRush metadata fetch failed, falling back to Solana RPC: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
     const connection = getSolanaConnection();
     const pubkey = new PublicKey(walletAddress);
 
@@ -127,10 +175,117 @@ class BlockchainService {
     walletAddress: string,
     limit = CONSTANTS.TRUST.TX_HISTORY_LIMIT
   ): Promise<ParsedTransaction[]> {
+    try {
+      return await this._fetchTransactionsViaGoldRush(walletAddress, limit);
+    } catch (err) {
+      logger.warn(
+        `GoldRush transaction fetch failed, falling back to existing providers: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
     if (isHeliusEnabled()) {
       return this._fetchViaHelius(walletAddress, limit);
     }
     return this._fetchViaRpc(walletAddress, limit);
+  }
+
+  private async _fetchMetadataViaGoldRush(
+    walletAddress: string
+  ): Promise<WalletMetadata> {
+    logger.debug(`Using GoldRush x402 for wallet metadata: ${walletAddress.slice(0, 8)}…`);
+
+    const balances = await getGoldRushTokenBalances(
+      GOLDRUSH_SOLANA_CHAIN,
+      walletAddress
+    ) as GoldRushBalancesResponse;
+
+    const items = balances.data?.items ?? [];
+    const tokenAccounts: TokenAccount[] = items
+      .filter((item) => item.contract_address)
+      .map((item) => {
+        const decimals = item.contract_decimals ?? 0;
+        const rawBalance = Number(item.balance ?? 0);
+        return {
+          mint: item.contract_address!,
+          balance: decimals > 0 ? rawBalance / 10 ** decimals : rawBalance,
+          decimals,
+          symbol: item.contract_ticker_symbol,
+        };
+      });
+
+    const solAccount = tokenAccounts.find((account) =>
+      ["SOL", "WSOL"].includes(account.symbol ?? "")
+    );
+    const solBalance = solAccount?.balance ?? 0;
+
+    return {
+      address: balances.data?.address ?? walletAddress,
+      lamportBalance: Math.round(solBalance * LAMPORTS_PER_SOL),
+      solBalance,
+      tokenAccounts,
+      firstTransactionAt: undefined,
+      totalTransactions: 0,
+    };
+  }
+
+  private async _fetchTransactionsViaGoldRush(
+    walletAddress: string,
+    limit: number
+  ): Promise<ParsedTransaction[]> {
+    logger.debug(`Using GoldRush x402 for tx fetch: ${walletAddress.slice(0, 8)}…`);
+
+    const response = await getGoldRushTransactions(
+      GOLDRUSH_SOLANA_CHAIN,
+      walletAddress,
+      "small"
+    ) as GoldRushTransactionsResponse;
+
+    const items = response.data?.items ?? [];
+    return items.slice(0, limit).map((tx) => this._mapGoldRushTx(tx));
+  }
+
+  private _mapGoldRushTx(tx: GoldRushTransactionItem): ParsedTransaction {
+    const tokenTransfer = this._findGoldRushTokenTransfer(tx);
+
+    return {
+      signature: tx.tx_hash ?? "",
+      blockTime: tx.block_signed_at
+        ? Math.floor(new Date(tx.block_signed_at).getTime() / 1000)
+        : 0,
+      slot: tx.block_height ?? 0,
+      fee: Number(tx.fees_paid ?? 0),
+      status: tx.successful === false ? "failed" : "success",
+      type: tokenTransfer ? "transfer" : "other",
+      fromAddress: tokenTransfer?.fromAddress,
+      toAddress: tokenTransfer?.toAddress,
+      amount: tokenTransfer?.amount,
+      tokenMint: tokenTransfer?.tokenMint,
+    };
+  }
+
+  private _findGoldRushTokenTransfer(tx: GoldRushTransactionItem):
+    | {
+        fromAddress?: string;
+        toAddress?: string;
+        amount?: number;
+        tokenMint?: string;
+      }
+    | undefined {
+    for (const event of tx.log_events ?? []) {
+      if (event.decoded?.name?.toLowerCase() !== "transfer") continue;
+
+      const params = event.decoded.params ?? [];
+      const getParam = (name: string) =>
+        params.find((param) => param.name?.toLowerCase() === name)?.value;
+
+      return {
+        fromAddress: String(getParam("from") ?? ""),
+        toAddress: String(getParam("to") ?? ""),
+        amount: Number(getParam("value") ?? 0),
+      };
+    }
+
+    return undefined;
   }
 
   private async _fetchViaRpc(

@@ -8,8 +8,8 @@ interface TokenSelectorProps {
 }
 
 const tokens = [
-  { token: "USDC" as PaymentToken, label: "USDC", sub: "1.00 USDC", bg: "bg-pill-cyan",   sel: "bg-pill-cyan" },
-  { token: "SOL"  as PaymentToken, label: "SOL",  sub: "0.001 SOL", bg: "bg-pill-pink",   sel: "bg-pill-pink" },
+  { token: "USDC" as PaymentToken, label: "USDC", sub: "1.00 USDC", sel: "bg-pill-cyan" },
+  { token: "SOL" as PaymentToken, label: "SOL", sub: "0.001 SOL", sel: "bg-pill-pink" },
 ];
 
 export function TokenSelector({ value, onChange, disabled, dark }: TokenSelectorProps) {

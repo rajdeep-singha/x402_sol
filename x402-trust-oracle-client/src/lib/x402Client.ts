@@ -1,8 +1,9 @@
 /**
  * x402 Client — React / Wallet Adapter version
  *
- * Uses @solana/wallet-adapter-react instead of a raw Keypair.
- * Implements the full x402 flow: request → 402 → pay → retry.
+ * Supports two payment paths:
+ *   SOL      — native SOL transfer on Solana devnet
+ *   USDC     — SPL token transfer on Solana devnet
  */
 
 import {
@@ -95,7 +96,7 @@ export class X402Client {
         url: `${CONFIG.API_BASE_URL}${path}`,
         data: body,
       });
-      // Dev bypass or cached — returned 200 directly
+      // Cached or dev bypass — 200 returned directly
       return ((res.data as unknown) as { data: T }).data;
     } catch (err) {
       const axiosErr = err as AxiosError<X402PaymentRequiredResponse>;
@@ -108,12 +109,15 @@ export class X402Client {
     // ── Step 2: Show payment required ─────────────────────────────────────
     onStep({ step: "payment_required", paymentInstructions, token });
 
-    const receiver = new PublicKey(paymentInstructions.payment.receiver);
-
-    // ── Step 3: Send Solana transaction ───────────────────────────────────
+    // ── Step 3: Send payment ───────────────────────────────────────────────
     onStep({ step: "sending_tx", token });
 
-    const txSignature = await (token === "SOL"
+    let txSignature: string;
+
+    // Solana path — receiver is a Solana address
+    const receiver = new PublicKey(paymentInstructions.payment.receiver);
+
+    txSignature = await (token === "SOL"
       ? this._sendSol(receiver, paymentInstructions.payment.amount.SOL ?? 0.001, wallet)
       : this._sendUsdc(
           receiver,
@@ -122,13 +126,12 @@ export class X402Client {
           wallet
         ));
 
-    // ── Step 4: Wait for confirmation ─────────────────────────────────────
+    // ── Step 4: Wait for Solana confirmation ─────────────────────────────
     onStep({ step: "confirming_tx", txSignature, token });
     await this.connection.confirmTransaction(txSignature, "confirmed");
-
-    // ── Step 5: Retry with payment proof ─────────────────────────────────
     onStep({ step: "verifying", txSignature, token });
 
+    // ── Step 5: Retry original request with payment proof ─────────────────
     const retryRes = await axios.request<TrustQueryResponse>({
       method,
       url: `${CONFIG.API_BASE_URL}${path}`,
@@ -143,7 +146,7 @@ export class X402Client {
     return ((retryRes.data as unknown) as { data: T }).data;
   }
 
-  // ─── Payment helpers ──────────────────────────────────────────────────────
+  // ─── Solana payment helpers ───────────────────────────────────────────────
 
   private async _sendSol(
     receiver: PublicKey,
@@ -173,7 +176,7 @@ export class X402Client {
     const mintInfo = await getMint(this.connection, usdcMint);
     const rawAmount = BigInt(Math.round(amount * 10 ** mintInfo.decimals));
 
-    const senderAta  = await getAssociatedTokenAddress(usdcMint, wallet.publicKey!);
+    const senderAta   = await getAssociatedTokenAddress(usdcMint, wallet.publicKey!);
     const receiverAta = await getAssociatedTokenAddress(usdcMint, receiver);
     const { blockhash } = await this.connection.getLatestBlockhash();
 
@@ -191,6 +194,7 @@ export class X402Client {
     const signed = await wallet.signTransaction!(tx);
     return this.connection.sendRawTransaction(signed.serialize(), { skipPreflight: false });
   }
+
 }
 
 // Singleton

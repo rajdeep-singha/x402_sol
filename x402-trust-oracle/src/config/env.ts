@@ -23,6 +23,13 @@ export const env = {
   HELIUS_API_KEY: optional("HELIUS_API_KEY", ""),
   HELIUS_RPC_URL: optional("HELIUS_RPC_URL", ""),
 
+  // GoldRush x402
+  WALLET_PRIVATE_KEY: optional("WALLET_PRIVATE_KEY", ""),
+  GOLDRUSH_X402_BASE_URL: optional(
+    "GOLDRUSH_X402_BASE_URL",
+    "https://x402.goldrush.dev"
+  ),
+
   // Payment
   RECEIVER_WALLET_ADDRESS: required("RECEIVER_WALLET_ADDRESS"),
   PAYMENT_AMOUNT_USDC: parseInt(optional("PAYMENT_AMOUNT_USDC", "1000000"), 10), // 1 USDC

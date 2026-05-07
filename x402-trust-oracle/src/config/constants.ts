@@ -43,4 +43,9 @@ export const CONSTANTS = {
     PAYMENT_TX: "x-payment-tx",         // txSignature sent by client
     PAYMENT_TOKEN: "x-payment-token",   // "USDC" | "SOL"
   },
+
+  GOLDRUSH_X402: {
+    BASE_URL: env.GOLDRUSH_X402_BASE_URL,
+    PAYMENT_NETWORK: "eip155:84532",
+  },
 } as const;
