@@ -27,6 +27,7 @@ import {
   PaymentFlowState,
 } from "@/types";
 import { CONFIG } from "./constants";
+import { requestWithApiFallback } from "./api";
 
 // ─── Wallet Adapter interface (subset we need) ────────────────────────────────
 export interface WalletAdapter {
@@ -89,21 +90,30 @@ export class X402Client {
     onStep({ step: "requesting" });
 
     let paymentInstructions: X402PaymentRequiredResponse;
+    let apiBaseUrl = CONFIG.API_BASE_URL;
 
     try {
-      const res = await axios.request<TrustQueryResponse>({
-        method,
-        url: `${CONFIG.API_BASE_URL}${path}`,
-        data: body,
-      });
+      const { baseUrl, response } = await requestWithApiFallback<TrustQueryResponse>(
+        path,
+        {
+          method,
+          data: body,
+        },
+        (err) => {
+          const axiosErr = err as AxiosError<X402PaymentRequiredResponse>;
+          return !axiosErr.response;
+        }
+      );
+      apiBaseUrl = baseUrl;
       // Cached or dev bypass — 200 returned directly
-      return ((res.data as unknown) as { data: T }).data;
+      return ((response.data as unknown) as { data: T }).data;
     } catch (err) {
       const axiosErr = err as AxiosError<X402PaymentRequiredResponse>;
       if (axiosErr.response?.status !== 402) {
         throw new Error(axiosErr.response?.data?.error ?? axiosErr.message);
       }
       paymentInstructions = axiosErr.response.data;
+      apiBaseUrl = axiosErr.config?.url?.slice(0, -path.length) ?? apiBaseUrl;
     }
 
     // ── Step 2: Show payment required ─────────────────────────────────────
@@ -134,7 +144,7 @@ export class X402Client {
     // ── Step 5: Retry original request with payment proof ─────────────────
     const retryRes = await axios.request<TrustQueryResponse>({
       method,
-      url: `${CONFIG.API_BASE_URL}${path}`,
+      url: `${apiBaseUrl}${path}`,
       data: body,
       headers: {
         [CONFIG.PAYMENT_HEADERS.TX]:    txSignature,

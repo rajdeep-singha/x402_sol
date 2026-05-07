@@ -14,7 +14,18 @@ export function createApp(): Application {
 
   app.use(
     cors({
-      origin: env.NODE_ENV === "production" ? false : "*",
+      origin(origin, callback) {
+        if (
+          !origin ||
+          env.CORS_ALLOWED_ORIGINS.includes("*") ||
+          env.CORS_ALLOWED_ORIGINS.includes(origin)
+        ) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`CORS origin not allowed: ${origin}`));
+      },
       methods: ["GET", "POST", "DELETE"],
       allowedHeaders: [
         "Content-Type",

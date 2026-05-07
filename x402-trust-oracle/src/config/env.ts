@@ -11,9 +11,25 @@ function optional(key: string, fallback: string): string {
   return process.env[key] ?? fallback;
 }
 
+function optionalList(key: string, fallback: string[]): string[] {
+  const val = process.env[key];
+  if (!val) return fallback;
+
+  return val
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 export const env = {
   PORT: parseInt(optional("PORT", "3000"), 10),
   NODE_ENV: optional("NODE_ENV", "development"),
+  CORS_ALLOWED_ORIGINS: optionalList("CORS_ALLOWED_ORIGINS", [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+  ]),
 
   // Solana RPC
   SOLANA_RPC_URL: optional(

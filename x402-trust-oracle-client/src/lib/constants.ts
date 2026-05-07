@@ -1,5 +1,21 @@
+const LOCAL_API_BASE_URL = "http://localhost:3000";
+const DEPLOYED_API_BASE_URL =
+  import.meta.env.VITE_DEPLOYED_API_BASE_URL ??
+  "https://x402-sol-server.onrender.com";
+
+const isLocalClient =
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
+
+const API_BASE_URLS = import.meta.env.VITE_API_BASE_URL
+  ? [import.meta.env.VITE_API_BASE_URL]
+  : isLocalClient
+    ? [LOCAL_API_BASE_URL, DEPLOYED_API_BASE_URL]
+    : [DEPLOYED_API_BASE_URL];
+
 export const CONFIG = {
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000",
+  API_BASE_URL: API_BASE_URLS[0],
+  API_BASE_URLS,
 
   // Solana devnet (for x402 / Covalent devnet integration)
   SOLANA_NETWORK: "devnet" as const,

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import { CONFIG } from "@/lib/constants";
+import { requestWithApiFallback } from "@/lib/api";
 
 export interface HealthData {
   status: "ok" | "degraded" | "down";
@@ -42,9 +41,13 @@ export function useHealthMonitor(intervalMs = 30_000) {
   const check = useCallback(async () => {
     const start = Date.now();
     try {
-      const res = await axios.get<HealthData>(`${CONFIG.API_BASE_URL}/health`, {
-        timeout: 8000,
-      });
+      const { response: res } = await requestWithApiFallback<HealthData>(
+        "/health",
+        {
+          method: "GET",
+          timeout: 8000,
+        }
+      );
       const latencyMs = Date.now() - start;
       const status: HealthStatus = res.data.status === "ok" ? "ok" :
                                    res.data.status === "degraded" ? "degraded" : "down";
