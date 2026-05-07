@@ -152,7 +152,7 @@ class BlockchainService {
     });
 
     // Oldest signature is last in the array
-    const firstTx = signatures.at(-1);
+    const firstTx = signatures[signatures.length - 1]
     const firstTransactionAt = firstTx?.blockTime
       ? firstTx.blockTime * 1000
       : undefined;
