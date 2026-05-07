@@ -24,7 +24,7 @@ export function createApp(): Application {
           return;
         }
 
-        callback(new Error(`CORS origin not allowed: ${origin}`));
+        callback(null, false);
       },
       methods: ["GET", "POST", "DELETE"],
       allowedHeaders: [

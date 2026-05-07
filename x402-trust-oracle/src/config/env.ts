@@ -25,11 +25,11 @@ export const env = {
   PORT: parseInt(optional("PORT", "3000"), 10),
   NODE_ENV: optional("NODE_ENV", "development"),
   CORS_ALLOWED_ORIGINS: optionalList("CORS_ALLOWED_ORIGINS", [
+    "https://x402-sol-beta.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:4173",
     "http://127.0.0.1:4173",
-    "https://x402-sol-beta.vercel.app",
   ]),
 
   // Solana RPC
