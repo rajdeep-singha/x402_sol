@@ -12,29 +12,30 @@ import { logger } from "./utils/logger";
 export function createApp(): Application {
   const app = express();
 
-  app.use(
-    cors({
-      origin(origin, callback) {
-        if (
-          !origin ||
-          env.CORS_ALLOWED_ORIGINS.includes("*") ||
-          env.CORS_ALLOWED_ORIGINS.includes(origin)
-        ) {
-          callback(null, true);
-          return;
-        }
+  const corsOptions: cors.CorsOptions = {
+    origin(origin, callback) {
+      if (
+        !origin ||
+        env.CORS_ALLOWED_ORIGINS.includes("*") ||
+        env.CORS_ALLOWED_ORIGINS.includes(origin)
+      ) {
+        callback(null, true);
+        return;
+      }
 
-        callback(null, false);
-      },
-      methods: ["GET", "POST", "DELETE"],
-      allowedHeaders: [
-        "Content-Type",
-        "Authorization",
-        "x-payment-tx",
-        "x-payment-token",
-      ],
-    })
-  );
+      callback(null, false);
+    },
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-payment-tx",
+      "x-payment-token",
+    ],
+  };
+
+  app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions)); // handle preflight for all routes
 
   app.use(express.json({ limit: "10kb" }));
   app.use(express.urlencoded({ extended: false }));
