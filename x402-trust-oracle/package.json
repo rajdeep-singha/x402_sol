@@ -2,6 +2,7 @@
   "name": "x402-trust-oracle",
   "version": "1.0.0",
   "description": "x402-Gated Counterparty Trust Oracle on Solana",
+  "license": "MIT",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
