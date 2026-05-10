@@ -43,22 +43,22 @@ Trust service computes score, rating, and component breakdown
 
 ```text
 Client                              Trust Oracle                         GoldRush
-  |                                      |                                   |
-  |-- GET /trust/:wallet -------------->|                                   |
-  |<-- 402 Payment Required ------------|                                   |
-  |    { token, amount, receiver }       |                                   |
-  |                                      |                                   |
-  |-- Send USDC/SOL payment -----------> Solana                             |
-  |<-- transaction signature -----------|                                   |
-  |                                      |                                   |
-  |-- GET /trust/:wallet -------------->|                                   |
-  |   x-payment-tx: <signature>         |                                   |
-  |   x-payment-token: USDC             |                                   |
-  |                                      |-- x402 paid fetch --------------->|
-  |                                      |   /balances_v2, /transactions_v3  |
-  |                                      |<-- indexed wallet data -----------|
-  |                                      |                                   |
-  |<-- 200 { score, rating, breakdown }-|                                   |
+  |                                     |                                  |
+  |-- GET /trust/:wallet -------------->|                                  |
+  |<-- 402 Payment Required ------------|                                  |
+  |    { token, amount, receiver }      |                                  |
+  |                                     |                                  |
+  |-- Send USDC/SOL payment -----------> Solana                            |
+  |<-- transaction signature -----------|                                  |
+  |                                     |                                  |
+  |-- GET /trust/:wallet -------------->|                                  |
+  |   x-payment-tx: <signature>         |                                  |
+  |   x-payment-token: USDC             |                                  |
+  |                                     |-- x402 paid fetch ---------------|
+  |                                     |   /balances_v2, /transactions_v3 |
+  |                                     |     indexed wallet data ---------|
+  |                                     |                                  |
+  |<-- 200 { score, rating, breakdown }-|                                  |
 ```
 
 ## Architecture
