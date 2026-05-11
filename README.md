@@ -6,7 +6,7 @@ This project is designed for applications that need a simple trust primitive bef
 
 ## GoldRush Usage
 
-GoldRush is the primary indexed data layer for the trust oracle.
+GoldRush is the primary indexed data layer for the trust oracle
 
 The backend uses GoldRush x402 endpoints to fetch wallet state before calculating a score:
 
