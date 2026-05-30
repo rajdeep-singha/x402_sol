@@ -1,6 +1,6 @@
 # x402 Trust Oracle
 
-A payment-gated counterparty trust scoring API for Solana wallets. Clients pay a small fee in USDC or SOL through an x402-style payment flow, then receive an on-chain trust score derived from indexed wallet balances and transaction activity.
+A payment-gated counterparty trust scoring API for Solana wallets. Clients pay a small fee in USDC or SOL through an x402-style payment flow, then receive an on-chain trust score derived from indexed wallet balances and transaction activity
 
 This project is designed for applications that need a simple trust primitive before interacting with an unknown wallet, counterparty, merchant, or automated agent.
 
