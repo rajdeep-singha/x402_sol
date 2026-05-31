@@ -273,4 +273,4 @@ GoldRush is not just a data source in this project. It is the infrastructure lay
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](../LICENSE).
+This project is licensed under the MIT License. See [LICENSE](../LICENSE)
